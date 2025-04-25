@@ -43,7 +43,8 @@ import com.example.md_lab004__canvas.DrawingView
 @SuppressLint("RememberReturnType")
 @Composable
 fun DrawingApp() {
-    val drawingView = DrawingView(LocalContext.current) // No need for remember here
+    val context = LocalContext.current
+    val drawingView = remember { DrawingView(context) }
     var brushSize by remember { mutableFloatStateOf(10f) }
     var selectedColor by remember { mutableStateOf(Color.Black) }
 
@@ -80,18 +81,23 @@ fun DrawingApp() {
             valueRange = 5f..50f,
             modifier = Modifier.padding(horizontal = 16.dp)
         )
+
+        ImageButtons(drawingView = drawingView, context = context)
     }
 }
 
 @Composable
 fun ImageButtons(drawingView: DrawingView, context: Context) {
-    var imageUri by remember { mutableStateOf<Uri?>(null) }
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
-        uri?.let {
-            val bitmap = MediaStore.Images.Media.getBitmap(context.contentResolver, it)
-            drawingView.setBackgroundBitmap(bitmap)
+        if (uri != null) {
+            try {
+                val bitmap = MediaStore.Images.Media.getBitmap(context.contentResolver, uri)
+                drawingView.setBackgroundBitmap(bitmap)
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
         }
     }
 
@@ -99,9 +105,7 @@ fun ImageButtons(drawingView: DrawingView, context: Context) {
         Button(onClick = { launcher.launch("image/*") }) {
             Text("Load Image")
         }
-
         Spacer(modifier = Modifier.width(8.dp))
-
         Button(onClick = {
             val bitmap = drawingView.getBitmap()
             saveBitmapToGallery(context, bitmap)

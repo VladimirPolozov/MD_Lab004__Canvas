@@ -1,5 +1,6 @@
 package com.example.md_lab004__canvas
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Path
 import android.graphics.Paint
@@ -13,10 +14,13 @@ import android.view.View
 class DrawingView : View {
     private val paths = mutableListOf<Pair<Path, Paint>>()
     private var currentPath: Path? = null
-    private val paint = Paint().apply {
+    private val paintTemplate = Paint().apply {
         color = Color.BLACK
         style = Paint.Style.STROKE
         strokeWidth = 10f
+        isAntiAlias = true
+        strokeJoin = Paint.Join.ROUND
+        strokeCap = Paint.Cap.ROUND
     }
 
     constructor(context: Context) : super(context)
@@ -27,30 +31,40 @@ class DrawingView : View {
         paths.forEach { (path, paint) ->
             canvas.drawPath(path, paint)
         }
+        currentPath?.let {
+            canvas.drawPath(it, paintTemplate)
+        }
     }
 
+    @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(event: MotionEvent): Boolean {
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
                 currentPath = Path().apply {
                     moveTo(event.x, event.y)
                 }
-                paths.add(currentPath!! to Paint(paint))
+                invalidate()
             }
             MotionEvent.ACTION_MOVE -> {
                 currentPath?.lineTo(event.x, event.y)
                 invalidate()
+            }
+            MotionEvent.ACTION_UP -> {
+                currentPath?.let {
+                    paths.add(it to Paint(paintTemplate))
+                    currentPath = null
+                }
             }
         }
         return true
     }
 
     fun setColor(color: Int) {
-        paint.color = color
+        paintTemplate.color = color
     }
 
     fun setBrushSize(size: Float) {
-        paint.strokeWidth = size
+        paintTemplate.strokeWidth = size
     }
 
     fun getBitmap(): Bitmap {
@@ -60,7 +74,8 @@ class DrawingView : View {
         return bitmap
     }
 
-    fun setBackgroundBitmap(bitmap: Bitmap) {
+    fun setBackgroundBitmap(bitmap: Bitmap?) {
+        if (bitmap == null) return
         val canvas = Canvas(bitmap)
         draw(canvas)
         invalidate()
