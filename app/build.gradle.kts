@@ -6,7 +6,7 @@ plugins {
 
 android {
     namespace = "com.example.md_lab004__canvas"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.example.md_lab004__canvas"
